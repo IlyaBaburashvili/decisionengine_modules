@@ -52,7 +52,8 @@ class GlideFrontendElement:
         # Default parameters for glidein request
         self.default_glidein_params = {
             # TODO: Remove this classad once token/proxy hybrid configurations are no longer supported
-            "CONTINUE_IF_NO_PROXY": "False"
+            # Set the default value to be True to default to token only; overridden when it is False from glideinwms.libsonnet
+            "CONTINUE_IF_NO_PROXY": "True"
         }
 
     def generate_glidein_requests(self, jobs_df, slots_df, entries, factory_globals, job_filter="ClusterId > 0"):
@@ -700,6 +701,11 @@ class GlideFrontendElement:
         self.web_url = self.fe_cfg["frontend"]["web_url"]
 
         # Group information
+        if "CONTINUE_IF_NO_PROXY" in group_config.get("attrs_descript"):
+            self.continue_if_no_proxy = group_config["attrs_descript"]["CONTINUE_IF_NO_PROXY"]
+        else:
+            self.continue_if_no_proxy = self.default_glidein_params["CONTINUE_IF_NO_PROXY"]
+        self.logger.info(f"CONTINUE_IF_NO_PROXY set to {self.continue_if_no_proxy}")
         self.workdir = group_config["workdir"]
         # This group's curbs and limits
         self.total_max_slots = int(group_config["total_max_glideins"])
@@ -1300,7 +1306,7 @@ class GlideFrontendElement:
                 self.logger.debug("identity= %s" % identity)
                 tkn_str = token_util.create_and_sign_token(pwd_file, scope=scope, duration=duration, identity=identity)
                 self.logger.debug("tkn_str= %s" % tkn_str)
-                with tempfile.NamedTemporaryFile(mode="wb", delete=False, dir=tkn_dir) as fd:
+                with tempfile.NamedTemporaryFile(mode="w", delete=False, dir=tkn_dir) as fd:
                     os.chmod(fd.name, 0o600)
                     fd.write(tkn_str)
                     fd.flush()
