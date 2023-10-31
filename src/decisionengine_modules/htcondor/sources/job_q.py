@@ -8,7 +8,9 @@ import pandas
 from decisionengine.framework.modules import Source
 from decisionengine.framework.modules.Source import Parameter
 from decisionengine_modules.htcondor import htcondor_query
+from decisionengine.framework.util.metrics import Gauge
 
+DE_JOB_Q_STATUS = Gauge("de_source_status", "Number of jobs classified per status (completed, removed, idle, running, held, suspended)")
 
 @Source.supports_config(
     Parameter("collector_host", type=str),
@@ -53,7 +55,7 @@ class JobQ(Source.Source):
                     for key, value in self.correction_map.items():
                         if eachDict.get(key) is None:
                             eachDict[key] = value
-
+                            DE_JOB_Q_STATUS.labels(self.key).set(State.STEADY.value)
                 df = pandas.DataFrame(condor_q.stored_data)
                 if not df.empty:
                     # Add schedd name and collector host to job records

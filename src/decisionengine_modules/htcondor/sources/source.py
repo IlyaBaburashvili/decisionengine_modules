@@ -9,7 +9,9 @@ import pandas
 from decisionengine.framework.modules import Source
 from decisionengine.framework.modules.Source import Parameter
 from decisionengine_modules.htcondor import htcondor_query
+from decisionengine.framework.util.metrics import Gauge
 
+DE_SOURCE_STATUS = Gauge("de_source_status", "Number of jobs classified per status (completed, removed, idle, running, held, suspended)")
 
 @Source.supports_config(
     Parameter("collector_host", type=str),
@@ -75,7 +77,7 @@ class ResourceManifests(Source.Source, metaclass=abc.ABCMeta):
                 for key, value in self.correction_map.items():
                     if eachDict.get(key) is None:
                         eachDict[key] = value
-
+                        DE_SOURCE_STATUS.labels(self.key).set(State.STEADY.value)
             dataframe = pandas.DataFrame(condor_status.stored_data)
             if not dataframe.empty:
                 (collector_host, secondary_collectors) = htcondor_query.split_collector_host(self.collector_host)
