@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2017 Fermi Research Alliance, LLC
 # SPDX-License-Identifier: Apache-2.0
+from collections import defaultdict
 
 import traceback
 
@@ -10,7 +11,7 @@ from decisionengine.framework.modules.Source import Parameter
 from decisionengine_modules.htcondor import htcondor_query
 from decisionengine.framework.util.metrics import Gauge
 
-DE_JOB_Q_STATUS = Gauge("de_source_status", "Number of jobs classified per status (completed, removed, idle, running, held, suspended)")
+DE_JOB_Q_STATUS = Gauge("de_job_q_status", "Number of jobs classified per status (completed, removed, idle, running, held, suspended)", ["job_status"])
 
 @Source.supports_config(
     Parameter("collector_host", type=str),
@@ -50,12 +51,16 @@ class JobQ(Source.Source):
                 condor_q.load(
                     constraint=self.constraint, format_list=self.classad_attrs, condor_config=self.condor_config
                 )
-
+                job_statuses = defaultdict(int)
                 for eachDict in condor_q.stored_data:
                     for key, value in self.correction_map.items():
                         if eachDict.get(key) is None:
                             eachDict[key] = value
-                            DE_JOB_Q_STATUS.labels(self.key).set(State.STEADY.value)
+                    job_statuses[eachDict["JobStatus"]]+=1
+                
+                for key, value in job_statuses.items():
+                    DE_JOB_Q_STATUS.labels(job_status = key).set(value)
+
                 df = pandas.DataFrame(condor_q.stored_data)
                 if not df.empty:
                     # Add schedd name and collector host to job records

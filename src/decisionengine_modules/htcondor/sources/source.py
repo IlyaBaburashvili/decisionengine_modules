@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2017 Fermi Research Alliance, LLC
 # SPDX-License-Identifier: Apache-2.0
+from collections import defaultdict
 
 import abc
 import traceback
@@ -11,7 +12,7 @@ from decisionengine.framework.modules.Source import Parameter
 from decisionengine_modules.htcondor import htcondor_query
 from decisionengine.framework.util.metrics import Gauge
 
-DE_SOURCE_STATUS = Gauge("de_source_status", "Number of jobs classified per status (completed, removed, idle, running, held, suspended)")
+DE_SOURCE_STATUS_GAUGE = Gauge("de_source_status_gauge", "Number of jobs classified per status (completed, removed, idle, running, held, suspended)", ["job_status"])
 
 @Source.supports_config(
     Parameter("collector_host", type=str),
@@ -72,12 +73,16 @@ class ResourceManifests(Source.Source, metaclass=abc.ABCMeta):
             )
 
             condor_status.load(self.constraint, self.classad_attrs, self.condor_config)
-
+            job_statuses = defaultdict(int)
             for eachDict in condor_status.stored_data:
                 for key, value in self.correction_map.items():
                     if eachDict.get(key) is None:
                         eachDict[key] = value
-                        DE_SOURCE_STATUS.labels(self.key).set(State.STEADY.value)
+                job_statuses[eachDict["JobStatus"]]+=1
+
+            for key, value in job_statuses.items():
+                DE_SOURCE_STATUS_GAUGE.labels(job_status = key).set(value)
+
             dataframe = pandas.DataFrame(condor_status.stored_data)
             if not dataframe.empty:
                 (collector_host, secondary_collectors) = htcondor_query.split_collector_host(self.collector_host)
