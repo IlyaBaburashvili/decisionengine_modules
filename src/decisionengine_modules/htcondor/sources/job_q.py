@@ -11,7 +11,7 @@ from decisionengine.framework.modules.Source import Parameter
 from decisionengine_modules.htcondor import htcondor_query
 from decisionengine.framework.util.metrics import Gauge
 
-DE_JOB_Q_STATUS = Gauge("de_job_q_status", "Number of jobs classified per status (completed, removed, idle, running, held, suspended)", ["job_status"])
+DEM_HTCONDOR_JOBS_STATUS_COUNT = Gauge("dem_htcondor_jobs_status_count", "Number of jobs classified per status (idle,running, removed, completed, held, transferring_output, suspended)", ["job_status"])
 
 @Source.supports_config(
     Parameter("collector_host", type=str),
@@ -59,7 +59,7 @@ class JobQ(Source.Source):
                     job_statuses[eachDict["JobStatus"]]+=1
                 
                 for key, value in job_statuses.items():
-                    DE_JOB_Q_STATUS.labels(job_status = key).set(value)
+                    DEM_HTCONDOR_JOBS_STATUS_COUNT.labels(job_status = key).set(value)
 
                 df = pandas.DataFrame(condor_q.stored_data)
                 if not df.empty:

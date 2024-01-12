@@ -701,7 +701,7 @@ class GlideFrontendElement:
         self.web_url = self.fe_cfg["frontend"]["web_url"]
 
         # Group information
-        if "CONTINUE_IF_NO_PROXY" in group_config.get("attrs_descript"):
+        if group_config.get("attrs_descript") and "CONTINUE_IF_NO_PROXY" in group_config.get("attrs_descript"):
             self.continue_if_no_proxy = group_config["attrs_descript"]["CONTINUE_IF_NO_PROXY"]
         else:
             self.continue_if_no_proxy = self.default_glidein_params["CONTINUE_IF_NO_PROXY"]
