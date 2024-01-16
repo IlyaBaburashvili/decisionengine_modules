@@ -1,17 +1,22 @@
+import traceback
+
 # SPDX-FileCopyrightText: 2017 Fermi Research Alliance, LLC
 # SPDX-License-Identifier: Apache-2.0
 from collections import defaultdict
-
-import traceback
 
 import pandas
 
 from decisionengine.framework.modules import Source
 from decisionengine.framework.modules.Source import Parameter
-from decisionengine_modules.htcondor import htcondor_query
 from decisionengine.framework.util.metrics import Gauge
+from decisionengine_modules.htcondor import htcondor_query
 
-DEM_HTCONDOR_JOBS_STATUS_COUNT = Gauge("dem_htcondor_jobs_status_count", "Number of jobs classified per status (idle,running, removed, completed, held, transferring_output, suspended)", ["job_status"])
+DEM_HTCONDOR_JOBS_STATUS_COUNT = Gauge(
+    "dem_htcondor_jobs_status_count",
+    "Number of jobs classified per status (idle,running, removed, completed, held, transferring_output, suspended)",
+    ["job_status"],
+)
+
 
 @Source.supports_config(
     Parameter("collector_host", type=str),
@@ -56,10 +61,10 @@ class JobQ(Source.Source):
                     for key, value in self.correction_map.items():
                         if eachDict.get(key) is None:
                             eachDict[key] = value
-                    job_statuses[eachDict["JobStatus"]]+=1
-                
+                    job_statuses[eachDict["JobStatus"]] += 1
+
                 for key, value in job_statuses.items():
-                    DEM_HTCONDOR_JOBS_STATUS_COUNT.labels(job_status = key).set(value)
+                    DEM_HTCONDOR_JOBS_STATUS_COUNT.labels(job_status=key).set(value)
 
                 df = pandas.DataFrame(condor_q.stored_data)
                 if not df.empty:

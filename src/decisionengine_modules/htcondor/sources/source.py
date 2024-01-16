@@ -1,18 +1,21 @@
+import abc
+import traceback
+
 # SPDX-FileCopyrightText: 2017 Fermi Research Alliance, LLC
 # SPDX-License-Identifier: Apache-2.0
 from collections import defaultdict
-
-import abc
-import traceback
 
 import pandas
 
 from decisionengine.framework.modules import Source
 from decisionengine.framework.modules.Source import Parameter
-from decisionengine_modules.htcondor import htcondor_query
 from decisionengine.framework.util.metrics import Gauge
+from decisionengine_modules.htcondor import htcondor_query
 
-DEM_HTCONDOR_SLOTS_STATUS_COUNT = Gauge("dem_htcondor_slots_status_count", "Number of glideins available for the client based on status.", ["source_status"])
+DEM_HTCONDOR_SLOTS_STATUS_COUNT = Gauge(
+    "dem_htcondor_slots_status_count", "Number of glideins available for the client based on status.", ["source_status"]
+)
+
 
 @Source.supports_config(
     Parameter("collector_host", type=str),
@@ -78,10 +81,10 @@ class ResourceManifests(Source.Source, metaclass=abc.ABCMeta):
                 for key, value in self.correction_map.items():
                     if eachDict.get(key) is None:
                         eachDict[key] = value
-                source_statuses[eachDict["Activity"]]+=1
+                source_statuses[eachDict["Activity"]] += 1
 
             for key, value in source_statuses.items():
-                DEM_HTCONDOR_SLOTS_STATUS_COUNT.labels(source_status = key).set(value)
+                DEM_HTCONDOR_SLOTS_STATUS_COUNT.labels(source_status=key).set(value)
 
             dataframe = pandas.DataFrame(condor_status.stored_data)
             if not dataframe.empty:
