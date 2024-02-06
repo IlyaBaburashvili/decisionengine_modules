@@ -11,8 +11,11 @@ from decisionengine.framework.modules import Source
 from decisionengine.framework.modules.Source import Parameter
 from decisionengine_modules.htcondor import htcondor_query
 from decisionengine.framework.util.metrics import Gauge
+from decisionengine.framework.util.metrics import Histogram
 
 DEM_HTCONDOR_SLOTS_STATUS_COUNT = Gauge("dem_htcondor_slots_status_count", "Number of glideins available for the client based on status.", ["source_status"])
+DEM_HTCONDOR_CORES_COUNT = Gauge("dem_htcondor_cores_count", "Number of active cores", ["state"])
+DEM_HTCONDOR_CORES_HISTOGRAM = Histogram("dem_htcondor_cores_histogram", "Histogram of active cores", ["state"])
 
 @Source.supports_config(
     Parameter("collector_host", type=str),
@@ -85,6 +88,22 @@ class ResourceManifests(Source.Source, metaclass=abc.ABCMeta):
 
             dataframe = pandas.DataFrame(condor_status.stored_data)
             if not dataframe.empty:
+                """ cpus = 0
+                    for i in range(len(dataframe["Cpus"])):
+                    if dataframe["PartitionableSlot"][i]:
+                        cpus+=dataframe["TotalSlotCpus"][i] - dataframe["Cpus"][i]
+                    else:
+                        cpus+=dataframe["Cpus"][i] 
+                for i in range(len(dataframe["Cpus"])):
+                    cpus += dataframe["Cpus"][i]
+                DEM_HTCONDOR_CORES_COUNT.set(cpus)
+                DEM_HTCONDOR_CORES_HISTOGRAM.observe(cpus) """
+                cpus_dict = defaultdict(int)
+                for i in range(len(dataframe["Cpus"])):
+                    cpus_dict[dataframe["State"][i]] += dataframe["Cpus"][i]
+                for key, value in cpus_dict.items():
+                    DEM_HTCONDOR_CORES_COUNT.labels(state = key).set(value)
+                    DEM_HTCONDOR_CORES_HISTOGRAM.labels(state = key).observe(value)
                 (collector_host, secondary_collectors) = htcondor_query.split_collector_host(self.collector_host)
                 dataframe["CollectorHost"] = [collector_host] * len(dataframe)
                 if secondary_collectors != "":
