@@ -89,16 +89,6 @@ class ResourceManifests(Source.Source, metaclass=abc.ABCMeta):
 
             dataframe = pandas.DataFrame(condor_status.stored_data)
             if not dataframe.empty:
-                """ cpus = 0
-                    for i in range(len(dataframe["Cpus"])):
-                    if dataframe["PartitionableSlot"][i]:
-                        cpus+=dataframe["TotalSlotCpus"][i] - dataframe["Cpus"][i]
-                    else:
-                        cpus+=dataframe["Cpus"][i] 
-                for i in range(len(dataframe["Cpus"])):
-                    cpus += dataframe["Cpus"][i]
-                DEM_HTCONDOR_CORES_COUNT.set(cpus)
-                DEM_HTCONDOR_CORES_HISTOGRAM.observe(cpus) """
                 cpus_dict = defaultdict(int)
                 for i in range(len(dataframe["Cpus"])):
                     cpus_dict[dataframe["State"][i]] += dataframe["Cpus"][i]
