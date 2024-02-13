@@ -25,6 +25,8 @@ wheels/
 *.egg
 MANIFEST
 src/decisionengine_modules/version.py
+src/decisionengine_modules/.vscode/launch.json
+.vscode/launch.json
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
