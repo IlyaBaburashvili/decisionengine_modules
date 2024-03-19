@@ -102,10 +102,15 @@ class ResourceManifests(Source.Source, metaclass=abc.ABCMeta):
 
             condor_status.load(self.constraint, self.classad_attrs, self.condor_config)
             source_statuses = defaultdict(int)
+            source_statuses = defaultdict(int)
             for eachDict in condor_status.stored_data:
                 for key, value in self.correction_map.items():
                     if eachDict.get(key) is None:
                         eachDict[key] = value
+                source_statuses[eachDict["Activity"]] += 1
+
+            for key, value in source_statuses.items():
+                DEM_HTCONDOR_SLOTS_STATUS_COUNT.labels(source_status=key).set(value)
                 source_statuses[eachDict["Activity"]] += 1
 
             for key, value in source_statuses.items():
